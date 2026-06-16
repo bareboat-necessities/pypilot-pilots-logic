@@ -22,7 +22,6 @@ add_library(pypilot_pilots_logic
 )
 
 target_include_directories(pypilot_pilots_logic PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${PYPILOT_DATA_MODEL_DIR}
 )
