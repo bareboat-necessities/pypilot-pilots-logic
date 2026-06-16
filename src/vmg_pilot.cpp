@@ -33,6 +33,7 @@ PilotResult compute_vmg_pilot(DataModel& model, uint64_t now_us) {
 
     if (model.ap.enabled.value) {
         model.servo.command_norm.set_internal_command(result.command_norm, now_us);
+        model.servo.position_command_deg.set_internal_command(Real(0), now_us);
     }
 
     return result;
