@@ -13,7 +13,8 @@ PilotsLogic::PilotsLogic()
       has_last_wind_speed_(false),
       last_heading_command_deg_(0.0f),
       has_last_heading_command_(false),
-      last_heading_error_int_us_(0) {}
+      last_heading_error_int_us_(0),
+      gps_speed_filter_kn_(0.0f) {}
 
 bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
     last_error_ = "";
@@ -63,6 +64,65 @@ bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
     }
 
     if (model.imu.heading_lowpass_deg.valid) {
+        if (model.navigation.gps.source.value != pypilot_data_model::SensorSource::none &&
+            model.navigation.gps.speed_kn.valid) {
+            gps_speed_filter_kn_ =
+                pypilot_algorithms::pypilot_gps_speed_filter(gps_speed_filter_kn_,
+                                                             model.navigation.gps.speed_kn.value);
+            if (model.navigation.gps.track_deg.valid && model.navigation.gps.speed_kn.value > Real(1)) {
+                Real previous_offset = model.ap.gps_compass_offset_deg.valid
+                                           ? model.ap.gps_compass_offset_deg.value
+                                           : Real(0);
+                Real measured_offset = pypilot_algorithms::pypilot_gps_heading_offset_measurement(
+                    model.navigation.gps.track_deg.value,
+                    model.imu.heading_lowpass_deg.value);
+                model.ap.gps_compass_offset_deg.set(
+                    pypilot_algorithms::pypilot_heading_offset_filter(
+                        previous_offset,
+                        measured_offset,
+                        pypilot_algorithms::pypilot_gps_heading_offset_alpha(gps_speed_filter_kn_)),
+                    now_us);
+            }
+        }
+
+        if (model.wind.apparent.source.value != pypilot_data_model::SensorSource::none &&
+            model.wind.apparent.filtered_direction_deg.valid) {
+            Real previous_offset = model.ap.wind_compass_offset_deg.valid
+                                       ? model.ap.wind_compass_offset_deg.value
+                                       : Real(0);
+            Real alpha = model.ap.wind_offset_filter_0_1.value;
+            if (alpha == Real(0)) {
+                alpha = Real(0.1);
+            }
+            Real measured_offset = pypilot_algorithms::pypilot_wind_heading_offset_measurement(
+                model.wind.apparent.filtered_direction_deg.value,
+                model.imu.heading_lowpass_deg.value);
+            model.ap.wind_compass_offset_deg.set(
+                pypilot_algorithms::pypilot_heading_offset_filter(previous_offset,
+                                                                  measured_offset,
+                                                                  alpha),
+                now_us);
+        }
+
+        if (model.wind.truewind.source.value != pypilot_data_model::SensorSource::none &&
+            model.wind.truewind.filtered_direction_deg.valid) {
+            Real previous_offset = model.ap.true_wind_compass_offset_deg.valid
+                                       ? model.ap.true_wind_compass_offset_deg.value
+                                       : Real(0);
+            Real alpha = model.ap.wind_offset_filter_0_1.value;
+            if (alpha == Real(0)) {
+                alpha = Real(0.1);
+            }
+            Real measured_offset = pypilot_algorithms::pypilot_wind_heading_offset_measurement(
+                model.wind.truewind.filtered_direction_deg.value,
+                model.imu.heading_lowpass_deg.value);
+            model.ap.true_wind_compass_offset_deg.set(
+                pypilot_algorithms::pypilot_heading_offset_filter(previous_offset,
+                                                                  measured_offset,
+                                                                  alpha),
+                now_us);
+        }
+
         model.ap.heading_deg.set(model.imu.heading_lowpass_deg.value, now_us);
     }
 
