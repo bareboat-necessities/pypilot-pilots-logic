@@ -3,25 +3,71 @@
 #include <pypilot_pilots_logic/math_helpers.hpp>
 #include <pypilot_pilots_logic/pilot_select.hpp>
 
+#include <pypilot_algorithms/mode_state.hpp>
 #include <pypilot_algorithms/pypilot_filters.hpp>
 
 namespace pypilot_pilots_logic {
 
-PilotsLogic::PilotsLogic()
-    : last_error_(""),
-      last_wind_speed_kn_(0.0f),
-      has_last_wind_speed_(false),
-      last_heading_command_deg_(0.0f),
-      has_last_heading_command_(false),
-      last_heading_error_int_us_(0),
-      gps_speed_filter_kn_(0.0f) {}
+static pypilot_algorithms::PypilotMode to_algorithm_mode(pypilot_data_model::AutopilotMode mode) {
+    switch (mode) {
+    case pypilot_data_model::AutopilotMode::gps:
+        return pypilot_algorithms::PypilotMode::gps;
+    case pypilot_data_model::AutopilotMode::nav:
+        return pypilot_algorithms::PypilotMode::nav;
+    case pypilot_data_model::AutopilotMode::wind:
+        return pypilot_algorithms::PypilotMode::wind;
+    case pypilot_data_model::AutopilotMode::true_wind:
+        return pypilot_algorithms::PypilotMode::true_wind;
+    case pypilot_data_model::AutopilotMode::compass:
+        return pypilot_algorithms::PypilotMode::compass;
+    }
+    return pypilot_algorithms::PypilotMode::compass;
+}
 
-bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
-    last_error_ = "";
+static pypilot_data_model::AutopilotMode to_data_mode(pypilot_algorithms::PypilotMode mode) {
+    switch (mode) {
+    case pypilot_algorithms::PypilotMode::gps:
+        return pypilot_data_model::AutopilotMode::gps;
+    case pypilot_algorithms::PypilotMode::nav:
+        return pypilot_data_model::AutopilotMode::nav;
+    case pypilot_algorithms::PypilotMode::wind:
+        return pypilot_data_model::AutopilotMode::wind;
+    case pypilot_algorithms::PypilotMode::true_wind:
+        return pypilot_data_model::AutopilotMode::true_wind;
+    case pypilot_algorithms::PypilotMode::compass:
+        return pypilot_data_model::AutopilotMode::compass;
+    }
+    return pypilot_data_model::AutopilotMode::compass;
+}
 
+static uint32_t to_data_mode_mask(uint32_t algorithm_mask) {
+    uint32_t mask = 0;
+    if (algorithm_mask & pypilot_algorithms::pypilot_mode_mask_compass) {
+        mask |= pypilot_data_model::mode_mask_compass;
+    }
+    if (algorithm_mask & pypilot_algorithms::pypilot_mode_mask_gps) {
+        mask |= pypilot_data_model::mode_mask_gps;
+    }
+    if (algorithm_mask & pypilot_algorithms::pypilot_mode_mask_nav) {
+        mask |= pypilot_data_model::mode_mask_nav;
+    }
+    if (algorithm_mask & pypilot_algorithms::pypilot_mode_mask_wind) {
+        mask |= pypilot_data_model::mode_mask_wind;
+    }
+    if (algorithm_mask & pypilot_algorithms::pypilot_mode_mask_true_wind) {
+        mask |= pypilot_data_model::mode_mask_true_wind;
+    }
+    return mask;
+}
+
+static void invalidate_stale_sources(DataModel& model, uint64_t now_us) {
     if (model.navigation.gps.source.value != pypilot_data_model::SensorSource::none &&
         pypilot_algorithms::pypilot_source_is_stale(now_us, model.navigation.gps.last_update_us)) {
         model.navigation.gps.source.value = pypilot_data_model::SensorSource::none;
+    }
+    if (model.navigation.apb.source.value != pypilot_data_model::SensorSource::none &&
+        pypilot_algorithms::pypilot_source_is_stale(now_us, model.navigation.apb.last_update_us)) {
+        model.navigation.apb.source.value = pypilot_data_model::SensorSource::none;
     }
     if (model.wind.apparent.source.value != pypilot_data_model::SensorSource::none &&
         pypilot_algorithms::pypilot_source_is_stale(now_us, model.wind.apparent.last_update_us)) {
@@ -41,6 +87,24 @@ bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
         model.water.speed_kn.valid = false;
         model.water.leeway_deg.valid = false;
     }
+}
+
+PilotsLogic::PilotsLogic()
+    : last_error_(""),
+      last_wind_speed_kn_(0.0f),
+      has_last_wind_speed_(false),
+      last_heading_command_deg_(0.0f),
+      has_last_heading_command_(false),
+      last_heading_error_int_us_(0),
+      gps_speed_filter_kn_(0.0f),
+      stored_preferred_command_deg_(0.0f),
+      stored_preferred_command_us_(0),
+      has_stored_preferred_command_(false) {}
+
+bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
+    last_error_ = "";
+
+    invalidate_stale_sources(model, now_us);
 
     if (model.wind.apparent.source.value != pypilot_data_model::SensorSource::none &&
         model.wind.apparent.speed_kn.valid) {
@@ -253,12 +317,76 @@ bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
                 now_us);
         }
 
-        model.ap.heading_deg.set(model.imu.heading_lowpass_deg.value, now_us);
+        bool compass_available = model.imu.heading_lowpass_deg.valid;
+        bool gps_available = model.navigation.gps.source.value != pypilot_data_model::SensorSource::none &&
+                             model.navigation.gps.track_deg.valid;
+        bool nav_available = model.navigation.apb.source.value != pypilot_data_model::SensorSource::none &&
+                             model.navigation.apb.track_deg.valid;
+        bool wind_available = model.wind.apparent.source.value != pypilot_data_model::SensorSource::none &&
+                              model.wind.apparent.filtered_direction_deg.valid;
+        bool true_wind_available = model.wind.truewind.source.value != pypilot_data_model::SensorSource::none &&
+                                   model.wind.truewind.filtered_direction_deg.valid;
+
+        uint32_t algorithm_modes = pypilot_algorithms::pypilot_available_modes(
+            compass_available,
+            gps_available,
+            nav_available,
+            wind_available,
+            true_wind_available,
+            model.ap.gps_and_nav_modes.value);
+        model.ap.available_modes_mask = to_data_mode_mask(algorithm_modes);
+
+        pypilot_algorithms::PypilotMode preferred_mode = to_algorithm_mode(model.ap.preferred_mode.value);
+        pypilot_algorithms::PypilotMode active_mode =
+            pypilot_algorithms::pypilot_best_mode(preferred_mode, algorithm_modes);
+        pypilot_data_model::AutopilotMode old_mode = model.ap.mode.value;
+        pypilot_data_model::AutopilotMode new_mode = to_data_mode(active_mode);
+
+        Real gps_offset = model.ap.gps_compass_offset_deg.valid ? model.ap.gps_compass_offset_deg.value
+                                                                : Real(0);
+        Real wind_offset = model.ap.wind_compass_offset_deg.valid ? model.ap.wind_compass_offset_deg.value
+                                                                  : Real(0);
+        Real true_wind_offset = model.ap.true_wind_compass_offset_deg.valid
+                                    ? model.ap.true_wind_compass_offset_deg.value
+                                    : Real(0);
+        Real mode_heading = pypilot_algorithms::pypilot_mode_heading(active_mode,
+                                                                     model.imu.heading_lowpass_deg.value,
+                                                                     gps_offset,
+                                                                     wind_offset,
+                                                                     true_wind_offset);
+        model.ap.heading_deg.set(mode_heading, now_us);
+
+        if (old_mode != new_mode) {
+            if (old_mode == model.ap.preferred_mode.value && model.ap.heading_command_deg.valid) {
+                stored_preferred_command_deg_ = model.ap.heading_command_deg.value;
+                stored_preferred_command_us_ = now_us;
+                has_stored_preferred_command_ = true;
+            }
+            model.ap.mode.value = new_mode;
+            has_last_heading_command_ = false;
+            last_heading_error_int_us_ = 0;
+
+            if (new_mode == model.ap.preferred_mode.value && has_stored_preferred_command_ &&
+                now_us - stored_preferred_command_us_ < 30000000ULL) {
+                model.ap.heading_command_deg.set(stored_preferred_command_deg_, now_us);
+                has_stored_preferred_command_ = false;
+            } else if (model.ap.heading_error_deg.valid) {
+                Real previous_error = model.ap.heading_error_deg.value;
+                if (pypilot_algorithms::pypilot_wind_mode(active_mode)) {
+                    previous_error = -previous_error;
+                }
+                model.ap.heading_command_deg.set(mode_heading - previous_error, now_us);
+            } else if (!model.ap.heading_command_deg.valid) {
+                model.ap.heading_command_deg.set(mode_heading, now_us);
+            }
+        } else if (!model.ap.heading_command_deg.valid) {
+            model.ap.heading_command_deg.set(mode_heading, now_us);
+        }
     }
 
     if (model.ap.heading_deg.valid && model.ap.heading_command_deg.valid) {
-        bool wind_mode = model.ap.mode.value == pypilot_data_model::AutopilotMode::wind ||
-                         model.ap.mode.value == pypilot_data_model::AutopilotMode::true_wind;
+        pypilot_algorithms::PypilotMode active_mode = to_algorithm_mode(model.ap.mode.value);
+        bool wind_mode = pypilot_algorithms::pypilot_wind_mode(active_mode);
         model.ap.heading_error_deg.set(
             pypilot_algorithms::pypilot_heading_error(model.ap.heading_deg.value,
                                                       model.ap.heading_command_deg.value,
