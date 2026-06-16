@@ -14,8 +14,7 @@ This is not a header-only module. It builds a real library target named `pypilot
 
 Implemented in this project:
 
-- source-priority helper
-- stale helper
+- source arbitration and stale handling
 - pypilot gain defaults
 - basic pilot
 - absolute pilot
@@ -33,11 +32,31 @@ It deliberately does not parse NMEA, SignalK, TCP, JSON, or servo UART packets.
 
 - `pypilot-data-model`
 - `pypilot-algorithms`
+- `pypilot-servo-protocol`
 
 ## Build
 
+The CMake build expects the dependency repositories checked out as siblings unless their paths are overridden:
+
 ```bash
-cmake -S . -B build
+cmake -S pypilot-pilots-logic -B build \
+  -DPYPILOT_DATA_MODEL_DIR=$PWD/pypilot-data-model/src \
+  -DPYPILOT_ALGORITHMS_DIR=$PWD/pypilot-algorithms/src \
+  -DPYPILOT_SERVO_PROTOCOL_DIR=$PWD/pypilot-servo-protocol/src
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
+```
+
+## Arduino example build
+
+`pypilot-servo-protocol` must be passed as an Arduino library because `servo_rudder.hpp` includes the real servo protocol header:
+
+```bash
+arduino-cli compile \
+  --fqbn arduino:avr:mega \
+  --libraries pypilot-pilots-logic \
+  --libraries pypilot-data-model \
+  --libraries pypilot-algorithms \
+  --libraries pypilot-servo-protocol \
+  pypilot-pilots-logic/examples/arduino/PilotsLogicExample
 ```
