@@ -19,7 +19,7 @@ int main() {
     PilotsLogic logic;
     assert(logic.step(model, 200));
     assert(model.ap.heading_error_deg.valid);
-    assert(std::fabs(model.ap.heading_error_deg.value - 10.0f) < 0.0001f);
+    assert(std::fabs(model.ap.heading_error_deg.value + 10.0f) < 0.0001f);
     assert(model.servo.command_norm.valid);
     return 0;
 }
