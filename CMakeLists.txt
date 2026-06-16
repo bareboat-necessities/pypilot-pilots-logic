@@ -49,6 +49,7 @@ if(PYPILOT_PILOTS_LOGIC_BUILD_TESTS)
       test_gps_pilot
       test_vmg_pilot
       test_shared_algorithm_usage
+      test_sensor_filters
       test_pilot_select
       test_pilots_logic)
     add_executable(${test_name} tests/${test_name}.cpp)
