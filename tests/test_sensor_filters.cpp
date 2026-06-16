@@ -67,10 +67,13 @@ int main() {
     offsets.navigation.gps.source.value = pypilot_data_model::SensorSource::serial;
     offsets.navigation.gps.speed_kn.set(10.0f, 1000000);
     offsets.navigation.gps.track_deg.set(100.0f, 1000000);
+    offsets.navigation.gps.last_update_us = 1000000;
     offsets.wind.apparent.source.value = pypilot_data_model::SensorSource::serial;
     offsets.wind.apparent.filtered_direction_deg.set(-20.0f, 1000000);
+    offsets.wind.apparent.last_update_us = 1000000;
     offsets.wind.truewind.source.value = pypilot_data_model::SensorSource::serial;
     offsets.wind.truewind.filtered_direction_deg.set(-10.0f, 1000000);
+    offsets.wind.truewind.last_update_us = 1000000;
     offsets.ap.wind_offset_filter_0_1.value = 0.1f;
     PilotsLogic offset_logic;
     assert(offset_logic.update_inputs(offsets, 1000000));
