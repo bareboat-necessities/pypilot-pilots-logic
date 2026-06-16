@@ -29,9 +29,10 @@ Implemented in this project:
 
 It deliberately does not parse NMEA, SignalK, TCP, JSON, or servo UART packets.
 
-## Dependency
+## Dependencies
 
 - `pypilot-data-model`
+- `pypilot-algorithms`
 
 ## Build
 
