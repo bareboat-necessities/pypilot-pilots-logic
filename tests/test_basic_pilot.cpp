@@ -14,10 +14,13 @@ int main() {
     model.ap.heading_command_rate_deg_s.set(0.5f, 100);
     model.imu.heading_rate_lowpass_deg_s.set(1.0f, 100);
     model.imu.heading_rate_rate_lowpass_deg_s2.set(2.0f, 100);
+    model.servo.position_command_deg.set_internal_command(11.0f, 150);
 
     PilotResult result = compute_basic_pilot(model, 200);
     assert(result.valid);
     assert(model.servo.command_norm.valid);
+    assert(model.servo.position_command_deg.valid);
+    assert(model.servo.position_command_deg.value == 0.0f);
 
     float expected = 10.0f * 0.003f + 1.0f * 0.09f + 2.0f * 0.075f +
                      std::sqrt(10.0f) * 0.005f + 0.5f * 0.6f;
