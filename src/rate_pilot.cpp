@@ -1,29 +1,35 @@
 #include <pypilot_pilots_logic/rate_pilot.hpp>
-#include <pypilot_pilots_logic/gain.hpp>
-#include <pypilot_pilots_logic/math_helpers.hpp>
+
+#include <pypilot_algorithms/rate_pilot.hpp>
 
 namespace pypilot_pilots_logic {
 
 PilotResult compute_rate_pilot(DataModel& model, uint64_t now_us) {
     PilotResult result;
 
-    Real target_rate = clamp(model.ap.heading_error_deg.value *
-                                 model.pilots.rate.turn_rate_rate_deg_s2.value,
-                             -model.pilots.rate.max_turn_rate_deg_s.value,
-                             model.pilots.rate.max_turn_rate_deg_s.value);
-    Real rate_error = model.imu.heading_rate_lowpass_deg_s.value - target_rate;
+    pypilot_algorithms::RatePilotInput<Real> input;
+    input.heading_error_deg = model.ap.heading_error_deg.value;
+    input.headingrate_deg_s = model.imu.heading_rate_lowpass_deg_s.value;
+    input.headingraterate_deg_s2 = model.imu.heading_rate_rate_lowpass_deg_s2.value;
+    input.heading_command_rate_deg_s = model.ap.heading_command_rate_deg_s.value;
 
-    Real d = compute_gain(rate_error, model.pilots.rate.D.gain.value);
-    Real dd = compute_gain(model.imu.heading_rate_rate_lowpass_deg_s2.value,
-                           model.pilots.rate.DD.gain.value);
-    Real ff = compute_gain(model.ap.heading_command_rate_deg_s.value,
-                           model.pilots.rate.FF.gain.value);
+    pypilot_algorithms::RatePilotGains<Real> gains;
+    gains.D = model.pilots.rate.D.gain.value;
+    gains.DD = model.pilots.rate.DD.gain.value;
+    gains.FF = model.pilots.rate.FF.gain.value;
+    gains.max_turn_rate_deg_s = model.pilots.rate.max_turn_rate_deg_s.value;
+    gains.turn_rate_rate_deg_s2 = model.pilots.rate.turn_rate_rate_deg_s2.value;
 
-    model.pilots.rate.D.contribution.set(d, now_us);
-    model.pilots.rate.DD.contribution.set(dd, now_us);
-    model.pilots.rate.FF.contribution.set(ff, now_us);
+    pypilot_algorithms::RatePilotOutput<Real> output =
+        pypilot_algorithms::compute_rate_pilot(input,
+                                               gains,
+                                               pypilot_algorithms::CommandClamp::raw);
 
-    result.command_norm = d + dd + ff;
+    model.pilots.rate.D.contribution.set(output.Dgain, now_us);
+    model.pilots.rate.DD.contribution.set(output.DDgain, now_us);
+    model.pilots.rate.FF.contribution.set(output.FFgain, now_us);
+
+    result.command_norm = output.command_norm;
     result.valid = true;
 
     if (model.ap.enabled.value) {
