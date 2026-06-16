@@ -1,6 +1,6 @@
 #include <pypilot_pilots_logic/absolute_pilot.hpp>
-#include <pypilot_pilots_logic/gain.hpp>
-#include <pypilot_pilots_logic/math_helpers.hpp>
+
+#include <pypilot_algorithms/absolute_pilot.hpp>
 
 namespace pypilot_pilots_logic {
 
@@ -12,18 +12,29 @@ PilotResult compute_absolute_pilot(DataModel& model, uint64_t now_us) {
         return result;
     }
 
-    Real p = compute_gain(model.ap.heading_error_deg.value, model.pilots.absolute.P.gain.value);
-    Real i = compute_gain(model.ap.heading_error_int_deg.value, model.pilots.absolute.I.gain.value);
-    Real d = compute_gain(model.imu.heading_rate_lowpass_deg_s.value, model.pilots.absolute.D.gain.value);
-    Real ff = compute_gain(model.ap.heading_command_rate_deg_s.value, model.pilots.absolute.FF.gain.value);
+    pypilot_algorithms::AbsolutePilotInput<Real> input;
+    input.heading_error_deg = model.ap.heading_error_deg.value;
+    input.heading_error_int_deg = model.ap.heading_error_int_deg.value;
+    input.headingrate_deg_s = model.imu.heading_rate_lowpass_deg_s.value;
+    input.heading_command_rate_deg_s = model.ap.heading_command_rate_deg_s.value;
 
-    model.pilots.absolute.P.contribution.set(p, now_us);
-    model.pilots.absolute.I.contribution.set(i, now_us);
-    model.pilots.absolute.D.contribution.set(d, now_us);
-    model.pilots.absolute.FF.contribution.set(ff, now_us);
+    pypilot_algorithms::AbsolutePilotGains<Real> gains;
+    gains.P = model.pilots.absolute.P.gain.value;
+    gains.I = model.pilots.absolute.I.gain.value;
+    gains.D = model.pilots.absolute.D.gain.value;
+    gains.FF = model.pilots.absolute.FF.gain.value;
 
-    Real command = p + i + d + ff;
-    result.position_command_deg = command * model.rudder.range_deg.value;
+    pypilot_algorithms::AbsolutePilotOutput<Real> output =
+        pypilot_algorithms::compute_absolute_pilot(input,
+                                                   gains,
+                                                   pypilot_algorithms::CommandClamp::raw);
+
+    model.pilots.absolute.P.contribution.set(output.Pgain, now_us);
+    model.pilots.absolute.I.contribution.set(output.Igain, now_us);
+    model.pilots.absolute.D.contribution.set(output.Dgain, now_us);
+    model.pilots.absolute.FF.contribution.set(output.FFgain, now_us);
+
+    result.position_command_deg = output.command_norm * model.rudder.range_deg.value;
     result.use_position_command = true;
     result.valid = true;
 
