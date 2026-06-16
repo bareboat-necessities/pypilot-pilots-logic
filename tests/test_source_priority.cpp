@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include <pypilot_pilots_logic/source_priority.hpp>
+#include <pypilot_pilots_logic/source_arbitration.hpp>
 
 using namespace pypilot_pilots_logic;
 using namespace pypilot_data_model;
