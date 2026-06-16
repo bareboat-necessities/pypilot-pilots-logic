@@ -2,11 +2,15 @@
 
 #include <stdint.h>
 
-#if __has_include(<pypilot_servo_protocol.hpp>)
-#include <pypilot_servo_protocol.hpp>
-#define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 1
+#if defined(__has_include)
+#  if __has_include(<pypilot_servo_protocol.hpp>)
+#    include <pypilot_servo_protocol.hpp>
+#    define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 1
+#  else
+#    define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 0
+#  endif
 #else
-#define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 0
+#  define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 0
 #endif
 
 namespace pypilot_pilots_logic {
