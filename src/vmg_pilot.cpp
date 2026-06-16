@@ -1,7 +1,6 @@
 #include <pypilot_pilots_logic/vmg_pilot.hpp>
 
-#include <pypilot_pilots_logic/gain.hpp>
-#include <pypilot_pilots_logic/math_helpers.hpp>
+#include <pypilot_algorithms/vmg_pilot.hpp>
 
 namespace pypilot_pilots_logic {
 
@@ -13,16 +12,23 @@ PilotResult compute_vmg_pilot(DataModel& model, uint64_t now_us) {
         return result;
     }
 
-    Real p = compute_gain(model.ap.heading_error_deg.value, model.pilots.vmg.P.gain.value);
-    Real d = compute_gain(model.imu.heading_rate_lowpass_deg_s.value, model.pilots.vmg.D.gain.value);
-    Real dd = compute_gain(model.imu.heading_rate_rate_lowpass_deg_s2.value,
-                           model.pilots.vmg.DD.gain.value);
+    pypilot_algorithms::VmgPilotInput<Real> input;
+    input.heading_error_deg = model.ap.heading_error_deg.value;
+    input.headingrate_deg_s = model.imu.heading_rate_lowpass_deg_s.value;
+    input.headingraterate_deg_s2 = model.imu.heading_rate_rate_lowpass_deg_s2.value;
 
-    model.pilots.vmg.P.contribution.set(p, now_us);
-    model.pilots.vmg.D.contribution.set(d, now_us);
-    model.pilots.vmg.DD.contribution.set(dd, now_us);
+    pypilot_algorithms::VmgPilotGains<Real> gains;
+    gains.P = model.pilots.vmg.P.gain.value;
+    gains.D = model.pilots.vmg.D.gain.value;
+    gains.DD = model.pilots.vmg.DD.gain.value;
 
-    result.command_norm = p + d + dd;
+    auto output = pypilot_algorithms::compute_vmg_pilot(input, gains, pypilot_algorithms::CommandClamp::raw);
+
+    model.pilots.vmg.P.contribution.set(output.Pgain, now_us);
+    model.pilots.vmg.D.contribution.set(output.Dgain, now_us);
+    model.pilots.vmg.DD.contribution.set(output.DDgain, now_us);
+
+    result.command_norm = output.command_norm;
     result.valid = true;
 
     if (model.ap.enabled.value) {
