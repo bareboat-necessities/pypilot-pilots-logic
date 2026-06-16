@@ -41,6 +41,27 @@ int main() {
     assert(logic.update_inputs(model, 3000000));
     assert(nearf(model.ap.heading_command_rate_deg_s.value, -1.0f));
 
+    DataModel conditioned;
+    conditioned.wind.apparent.source.value = pypilot_data_model::SensorSource::serial;
+    conditioned.wind.truewind.source.value = pypilot_data_model::SensorSource::none;
+    conditioned.wind.apparent.speed_kn.set(10.0f, 1000000);
+    conditioned.wind.apparent.direction_deg.set(0.0f, 1000000);
+    conditioned.wind.apparent.last_update_us = 1000000;
+    conditioned.water.source.value = pypilot_data_model::SensorSource::serial;
+    conditioned.water.speed_kn.set(5.0f, 1000000);
+    conditioned.water.last_update_us = 1000000;
+    PilotsLogic conditioned_logic;
+    assert(conditioned_logic.update_inputs(conditioned, 1000000));
+    assert(conditioned.wind.apparent.filtered_speed_kn.valid);
+    assert(conditioned.wind.apparent.filtered_direction_deg.valid);
+    assert(conditioned.wind.truewind.speed_kn.valid);
+    assert(conditioned.wind.truewind.direction_deg.valid);
+    assert(conditioned.wind.truewind.source.value == pypilot_data_model::SensorSource::water_wind);
+
+    conditioned.wind.apparent.last_update_us = 1;
+    assert(conditioned_logic.update_inputs(conditioned, 9000002));
+    assert(conditioned.wind.apparent.source.value == pypilot_data_model::SensorSource::none);
+
     DataModel offsets;
     offsets.imu.heading_lowpass_deg.set(80.0f, 1000000);
     offsets.navigation.gps.source.value = pypilot_data_model::SensorSource::serial;
