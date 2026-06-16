@@ -9,8 +9,6 @@ set(PYPILOT_ALGORITHMS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-algorithms/sr
 set(PYPILOT_SERVO_PROTOCOL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-servo-protocol/src" CACHE PATH "Path to pypilot-servo-protocol src")
 
 add_library(pypilot_pilots_logic
-  src/math_helpers.cpp
-  src/source_priority.cpp
   src/gain.cpp
   src/basic_pilot.cpp
   src/absolute_pilot.cpp
