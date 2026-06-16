@@ -13,6 +13,10 @@ jobs:
         with:
           repository: bareboat-necessities/pypilot-data-model
           path: pypilot-data-model
+      - uses: actions/checkout@v4
+        with:
+          repository: bareboat-necessities/pypilot-algorithms
+          path: pypilot-algorithms
       - name: Configure
         run: cmake -S pypilot-pilots-logic -B pypilot-pilots-logic/build
       - name: Build
