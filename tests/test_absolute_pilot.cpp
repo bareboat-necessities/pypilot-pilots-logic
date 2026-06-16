@@ -17,11 +17,14 @@ int main() {
     model.ap.heading_error_int_deg.set(0.0f, 100);
     model.ap.heading_command_rate_deg_s.set(0.0f, 100);
     model.imu.heading_rate_lowpass_deg_s.set(0.0f, 100);
+    model.servo.command_norm.set_internal_command(0.8f, 150);
 
     PilotResult result = compute_absolute_pilot(model, 200);
     assert(result.valid);
     assert(result.use_position_command);
     assert(model.servo.position_command_deg.valid);
+    assert(model.servo.command_norm.valid);
+    assert(model.servo.command_norm.value == 0.0f);
     assert(std::fabs(model.servo.position_command_deg.value - 15.0f) < 0.0001f);
 
     DataModel no_rudder;
