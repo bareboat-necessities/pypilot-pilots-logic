@@ -6,6 +6,7 @@ option(PYPILOT_PILOTS_LOGIC_BUILD_EXAMPLES "Build examples" ON)
 
 set(PYPILOT_DATA_MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-data-model/src" CACHE PATH "Path to pypilot-data-model src")
 set(PYPILOT_ALGORITHMS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-algorithms/src" CACHE PATH "Path to pypilot-algorithms src")
+set(PYPILOT_SERVO_PROTOCOL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-servo-protocol/src" CACHE PATH "Path to pypilot-servo-protocol src")
 
 add_library(pypilot_pilots_logic
   src/math_helpers.cpp
@@ -26,6 +27,7 @@ target_include_directories(pypilot_pilots_logic PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${PYPILOT_DATA_MODEL_DIR}
   ${PYPILOT_ALGORITHMS_DIR}
+  ${PYPILOT_SERVO_PROTOCOL_DIR}
 )
 
 target_compile_features(pypilot_pilots_logic PUBLIC cxx_std_11)
@@ -53,6 +55,7 @@ if(PYPILOT_PILOTS_LOGIC_BUILD_TESTS)
       test_mode_state
       test_tack
       test_source_arbitration
+      test_servo_feedback
       test_pilot_select
       test_pilots_logic)
     add_executable(${test_name} tests/${test_name}.cpp)
