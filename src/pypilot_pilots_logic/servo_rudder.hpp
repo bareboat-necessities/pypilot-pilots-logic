@@ -1,12 +1,32 @@
 #pragma once
 
 #include <stdint.h>
+
+#if __has_include(<pypilot_servo_protocol.hpp>)
 #include <pypilot_servo_protocol.hpp>
+#define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 1
+#else
+#define PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL 0
+#endif
 
 namespace pypilot_pilots_logic {
 
 inline bool pypilot_servo_faulted(uint32_t flags) {
+#if PYPILOT_PILOTS_LOGIC_HAS_SERVO_PROTOCOL
     return pypilot_servo_protocol::is_fault_flag(static_cast<uint16_t>(flags & 0xffffu));
+#else
+    const uint32_t fault_mask =
+        2u |     // OVERTEMP_FAULT
+        4u |     // OVERCURRENT_FAULT
+        16u |    // INVALID_PACKET_FLAG
+        32u |    // PORT_PIN_FAULT
+        64u |    // STARBOARD_PIN_FAULT
+        128u |   // BADVOLTAGE_FAULT
+        256u |   // MIN_RUDDER_FAULT
+        512u |   // MAX_RUDDER_FAULT
+        2048u;   // BAD_FUSES_FLAG
+    return (flags & fault_mask) != 0;
+#endif
 }
 
 inline bool pypilot_servo_allows_command(uint32_t flags) {
