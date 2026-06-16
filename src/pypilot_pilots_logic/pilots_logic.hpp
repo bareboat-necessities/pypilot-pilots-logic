@@ -1,5 +1,7 @@
 #pragma once
 
+#include <pypilot_algorithms/tack.hpp>
+
 #include "absolute_pilot.hpp"
 #include "basic_pilot.hpp"
 #include "gain.hpp"
@@ -19,6 +21,12 @@ class PilotsLogic {
 public:
     PilotsLogic();
 
+    void begin_tack(pypilot_algorithms::PypilotTackDirection direction);
+    void cancel_tack();
+    pypilot_algorithms::PypilotTackState tack_state() const;
+    pypilot_algorithms::PypilotTackDirection tack_direction() const;
+    void set_tack_config(Real delay_s, Real angle_deg, Real rate_deg_s, Real threshold_percent);
+
     bool update_inputs(DataModel& model, uint64_t now_us);
     bool compute_command(DataModel& model, uint64_t now_us);
     bool step(DataModel& model, uint64_t now_us);
@@ -36,6 +44,14 @@ private:
     Real stored_preferred_command_deg_;
     uint64_t stored_preferred_command_us_;
     bool has_stored_preferred_command_;
+    pypilot_algorithms::PypilotTackState tack_state_;
+    pypilot_algorithms::PypilotTackDirection tack_direction_;
+    pypilot_algorithms::PypilotTackDirection tack_current_direction_;
+    Real tack_delay_s_;
+    Real tack_angle_deg_;
+    Real tack_rate_deg_s_;
+    Real tack_threshold_percent_;
+    uint64_t tack_state_start_us_;
 };
 
 } // namespace pypilot_pilots_logic
