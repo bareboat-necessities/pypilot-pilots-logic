@@ -9,7 +9,7 @@
 #include "pilot_select.hpp"
 #include "rate_pilot.hpp"
 #include "simple_pilot.hpp"
-#include "source_priority.hpp"
+#include "source_arbitration.hpp"
 #include "stale.hpp"
 #include "types.hpp"
 #include "vmg_pilot.hpp"
