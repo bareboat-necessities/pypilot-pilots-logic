@@ -11,6 +11,7 @@ int main() {
 
     model.ap.enabled.value = true;
     model.rudder.angle_deg.set(0.0f, 100);
+    model.rudder.last_update_us = 100;
     model.rudder.range_deg.value = 30.0f;
     model.ap.heading_error_deg.set(10.0f, 100);
     model.ap.heading_error_int_deg.set(0.0f, 100);
@@ -29,5 +30,23 @@ int main() {
     PilotResult invalid = compute_absolute_pilot(no_rudder, 300);
     assert(!invalid.valid);
     assert(no_rudder.ap.pilot.value == pypilot_data_model::PilotName::basic);
+
+    DataModel stale_rudder;
+    set_gain_defaults(stale_rudder);
+    stale_rudder.ap.pilot.value = pypilot_data_model::PilotName::absolute;
+    stale_rudder.rudder.angle_deg.set(0.0f, 1);
+    stale_rudder.rudder.range_deg.value = 30.0f;
+    PilotResult stale = compute_absolute_pilot(stale_rudder, 9000002);
+    assert(!stale.valid);
+    assert(stale_rudder.ap.pilot.value == pypilot_data_model::PilotName::basic);
+
+    DataModel no_range;
+    set_gain_defaults(no_range);
+    no_range.ap.pilot.value = pypilot_data_model::PilotName::absolute;
+    no_range.rudder.angle_deg.set(0.0f, 100);
+    PilotResult range_invalid = compute_absolute_pilot(no_range, 200);
+    assert(!range_invalid.valid);
+    assert(no_range.ap.pilot.value == pypilot_data_model::PilotName::basic);
+
     return 0;
 }
