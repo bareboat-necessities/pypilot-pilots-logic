@@ -1,26 +1,33 @@
 #include <pypilot_pilots_logic/gps_pilot.hpp>
 
-#include <pypilot_pilots_logic/gain.hpp>
-#include <pypilot_pilots_logic/math_helpers.hpp>
+#include <pypilot_algorithms/gps_pilot.hpp>
 
 namespace pypilot_pilots_logic {
 
 PilotResult compute_gps_pilot(DataModel& model, uint64_t now_us) {
     PilotResult result;
 
+    pypilot_algorithms::GpsPilotInput<Real> input;
+    input.heading_error_deg = model.ap.heading_error_deg.value;
+    input.headingrate_deg_s = model.imu.heading_rate_lowpass_deg_s.value;
+    input.headingraterate_deg_s2 = model.imu.heading_rate_rate_lowpass_deg_s2.value;
+    input.heading_command_rate_deg_s = model.ap.heading_command_rate_deg_s.value;
 
-    Real p = compute_gain(model.ap.heading_error_deg.value, model.pilots.gps.P.gain.value);
-    Real d = compute_gain(model.imu.heading_rate_lowpass_deg_s.value, model.pilots.gps.D.gain.value);
-    Real dd = compute_gain(model.imu.heading_rate_rate_lowpass_deg_s2.value,
-                           model.pilots.gps.DD.gain.value);
-    Real ff = compute_gain(model.ap.heading_command_rate_deg_s.value, model.pilots.gps.FF.gain.value);
+    pypilot_algorithms::GpsPilotGains<Real> gains;
+    gains.P = model.pilots.gps.P.gain.value;
+    gains.D = model.pilots.gps.D.gain.value;
+    gains.DD = model.pilots.gps.DD.gain.value;
+    gains.PR = Real(0);
+    gains.FF = model.pilots.gps.FF.gain.value;
 
-    model.pilots.gps.P.contribution.set(p, now_us);
-    model.pilots.gps.D.contribution.set(d, now_us);
-    model.pilots.gps.DD.contribution.set(dd, now_us);
-    model.pilots.gps.FF.contribution.set(ff, now_us);
+    auto output = pypilot_algorithms::compute_gps_pilot(input, gains, pypilot_algorithms::CommandClamp::raw);
 
-    result.command_norm = p + d + dd + ff;
+    model.pilots.gps.P.contribution.set(output.Pgain, now_us);
+    model.pilots.gps.D.contribution.set(output.Dgain, now_us);
+    model.pilots.gps.DD.contribution.set(output.DDgain, now_us);
+    model.pilots.gps.FF.contribution.set(output.FFgain, now_us);
+
+    result.command_norm = output.command_norm;
     result.valid = true;
 
     if (model.ap.enabled.value) {
