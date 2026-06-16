@@ -32,6 +32,7 @@ private:
     Real last_heading_command_deg_;
     bool has_last_heading_command_;
     uint64_t last_heading_error_int_us_;
+    Real gps_speed_filter_kn_;
 };
 
 } // namespace pypilot_pilots_logic
