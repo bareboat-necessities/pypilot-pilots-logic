@@ -5,6 +5,12 @@
 using namespace pypilot_pilots_logic;
 
 int main() {
+    assert(source_is_stale(1ULL, 0ULL));
+    assert(source_can_update(pypilot_data_model::SensorSource::serial,
+                             pypilot_data_model::SensorSource::tcp,
+                             1ULL,
+                             0ULL));
+
     DataModel protected_truewind;
     protected_truewind.wind.truewind.source.value = pypilot_data_model::SensorSource::serial;
     protected_truewind.wind.truewind.speed_kn.set(7.0f, 1000000);
