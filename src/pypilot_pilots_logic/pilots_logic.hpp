@@ -29,6 +29,9 @@ private:
     const char* last_error_;
     Real last_wind_speed_kn_;
     bool has_last_wind_speed_;
+    Real last_heading_command_deg_;
+    bool has_last_heading_command_;
+    uint64_t last_heading_error_int_us_;
 };
 
 } // namespace pypilot_pilots_logic
