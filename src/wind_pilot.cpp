@@ -46,6 +46,7 @@ static PilotResult compute_wind_pilot_with_gust(DataModel& model,
 
     if (model.ap.enabled.value) {
         model.servo.command_norm.set_internal_command(result.command_norm, now_us);
+        model.servo.position_command_deg.set_internal_command(Real(0), now_us);
     }
 
     return result;
