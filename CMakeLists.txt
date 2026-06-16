@@ -8,6 +8,20 @@ set(PYPILOT_DATA_MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-data-model/sr
 set(PYPILOT_ALGORITHMS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-algorithms/src" CACHE PATH "Path to pypilot-algorithms src")
 set(PYPILOT_SERVO_PROTOCOL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-servo-protocol/src" CACHE PATH "Path to pypilot-servo-protocol src")
 
+if(NOT EXISTS "${PYPILOT_SERVO_PROTOCOL_DIR}/pypilot_servo_protocol.hpp")
+  include(FetchContent)
+  FetchContent_Declare(
+    pypilot_servo_protocol
+    GIT_REPOSITORY https://github.com/bareboat-necessities/pypilot-servo-protocol.git
+    GIT_TAG main
+  )
+  FetchContent_GetProperties(pypilot_servo_protocol)
+  if(NOT pypilot_servo_protocol_POPULATED)
+    FetchContent_Populate(pypilot_servo_protocol)
+  endif()
+  set(PYPILOT_SERVO_PROTOCOL_DIR "${pypilot_servo_protocol_SOURCE_DIR}/src")
+endif()
+
 add_library(pypilot_pilots_logic
   src/gain.cpp
   src/basic_pilot.cpp
