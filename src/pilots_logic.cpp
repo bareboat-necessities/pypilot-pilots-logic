@@ -4,6 +4,7 @@
 #include <pypilot_pilots_logic/pilot_select.hpp>
 
 #include <pypilot_algorithms/mode_state.hpp>
+#include <pypilot_algorithms/tack.hpp>
 #include <pypilot_algorithms/pypilot_filters.hpp>
 
 namespace pypilot_pilots_logic {
@@ -99,7 +100,45 @@ PilotsLogic::PilotsLogic()
       gps_speed_filter_kn_(0.0f),
       stored_preferred_command_deg_(0.0f),
       stored_preferred_command_us_(0),
-      has_stored_preferred_command_(false) {}
+      has_stored_preferred_command_(false),
+      tack_state_(pypilot_algorithms::PypilotTackState::none),
+      tack_direction_(pypilot_algorithms::PypilotTackDirection::none),
+      tack_current_direction_(pypilot_algorithms::PypilotTackDirection::none),
+      tack_delay_s_(0.0f),
+      tack_angle_deg_(100.0f),
+      tack_rate_deg_s_(15.0f),
+      tack_threshold_percent_(50.0f),
+      tack_state_start_us_(0) {}
+
+void PilotsLogic::begin_tack(pypilot_algorithms::PypilotTackDirection direction) {
+    tack_direction_ = direction;
+    tack_state_ = pypilot_algorithms::PypilotTackState::begin;
+}
+
+void PilotsLogic::cancel_tack() {
+    tack_state_ = pypilot_algorithms::PypilotTackState::none;
+    tack_direction_ = pypilot_algorithms::PypilotTackDirection::none;
+    tack_current_direction_ = pypilot_algorithms::PypilotTackDirection::none;
+    tack_state_start_us_ = 0;
+}
+
+pypilot_algorithms::PypilotTackState PilotsLogic::tack_state() const {
+    return tack_state_;
+}
+
+pypilot_algorithms::PypilotTackDirection PilotsLogic::tack_direction() const {
+    return tack_direction_;
+}
+
+void PilotsLogic::set_tack_config(Real delay_s,
+                                  Real angle_deg,
+                                  Real rate_deg_s,
+                                  Real threshold_percent) {
+    tack_delay_s_ = delay_s;
+    tack_angle_deg_ = angle_deg;
+    tack_rate_deg_s_ = rate_deg_s;
+    tack_threshold_percent_ = threshold_percent;
+}
 
 bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
     last_error_ = "";
@@ -438,7 +477,63 @@ bool PilotsLogic::compute_command(DataModel& model, uint64_t now_us) {
 
     if (!model.ap.enabled.value) {
         model.servo.command_norm.set_internal_command(0.0f, now_us);
+        cancel_tack();
         return true;
+    }
+
+    if (tack_state_ == pypilot_algorithms::PypilotTackState::begin) {
+        if (tack_direction_ == pypilot_algorithms::PypilotTackDirection::none) {
+            cancel_tack();
+        } else {
+            tack_current_direction_ = tack_direction_;
+            tack_state_ = pypilot_algorithms::PypilotTackState::waiting;
+            tack_state_start_us_ = now_us;
+        }
+    }
+
+    if (tack_state_ == pypilot_algorithms::PypilotTackState::waiting) {
+        Real elapsed_s = Real(now_us - tack_state_start_us_) / Real(1000000);
+        if (elapsed_s >= tack_delay_s_) {
+            tack_state_ = pypilot_algorithms::PypilotTackState::tacking;
+            tack_state_start_us_ = now_us;
+        }
+    }
+
+    if (tack_state_ == pypilot_algorithms::PypilotTackState::tacking) {
+        pypilot_algorithms::PypilotTackInput<Real> input;
+        input.direction = tack_current_direction_;
+        input.heading_command_deg = model.ap.heading_command_deg.value;
+        input.heading_deg = model.ap.heading_deg.valid ? model.ap.heading_deg.value
+                                                       : model.imu.heading_lowpass_deg.value;
+        input.headingrate_deg_s = model.imu.heading_rate_lowpass_deg_s.valid
+                                      ? model.imu.heading_rate_lowpass_deg_s.value
+                                      : Real(0);
+        input.headingraterate_deg_s2 = model.imu.heading_rate_rate_lowpass_deg_s2.valid
+                                           ? model.imu.heading_rate_rate_lowpass_deg_s2.value
+                                           : Real(0);
+        input.wind_mode = model.ap.mode.value == pypilot_data_model::AutopilotMode::wind ||
+                          model.ap.mode.value == pypilot_data_model::AutopilotMode::true_wind;
+        input.apparent_wind_direction_deg = model.wind.apparent.direction_deg.valid
+                                                ? model.wind.apparent.direction_deg.value
+                                                : (model.wind.apparent.filtered_direction_deg.valid
+                                                       ? model.wind.apparent.filtered_direction_deg.value
+                                                       : Real(0));
+
+        pypilot_algorithms::PypilotTackConfig<Real> config;
+        config.delay_s = tack_delay_s_;
+        config.angle_deg = tack_angle_deg_;
+        config.rate_deg_s = tack_rate_deg_s_;
+        config.threshold_percent = tack_threshold_percent_;
+
+        pypilot_algorithms::PypilotTackOutput<Real> tack =
+            pypilot_algorithms::pypilot_tack_compute(input, config);
+        if (tack.completed) {
+            model.ap.heading_command_deg.set(tack.new_heading_command_deg, now_us);
+            cancel_tack();
+        } else if (tack.override_pilot) {
+            model.servo.command_norm.set_internal_command(tack.command_norm, now_us);
+            return true;
+        }
     }
 
     PilotResult result = compute_selected_pilot(model,
