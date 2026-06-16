@@ -19,20 +19,20 @@ int main() {
 
     PilotsLogic logic;
     logic.set_tack_config(0.0f, 100.0f, 15.0f, 50.0f);
-    logic.begin_tack(pypilot_algorithms::PypilotTackDirection::port);
+    logic.begin_tack(PypilotTackDirection::port);
 
     assert(logic.compute_command(model, 1000000));
     assert(model.servo.command_norm.valid);
     assert(nearf(model.servo.command_norm.value, 1.0f));
-    assert(logic.tack_state() == pypilot_algorithms::PypilotTackState::tacking);
+    assert(logic.tack_state() == PypilotTackState::tacking);
 
     model.ap.heading_deg.set(40.0f, 2000000);
     model.imu.heading_lowpass_deg.set(40.0f, 2000000);
     assert(logic.compute_command(model, 2000000));
-    assert(logic.tack_state() == pypilot_algorithms::PypilotTackState::none);
+    assert(logic.tack_state() == PypilotTackState::none);
     assert(nearf(model.ap.heading_command_deg.value, 0.0f));
 
-    logic.begin_tack(pypilot_algorithms::PypilotTackDirection::starboard);
+    logic.begin_tack(PypilotTackDirection::starboard);
     model.ap.heading_command_deg.set(-100.0f, 3000000);
     model.ap.heading_deg.set(-80.0f, 3000000);
     model.imu.heading_lowpass_deg.set(-80.0f, 3000000);
@@ -41,7 +41,7 @@ int main() {
 
     model.ap.enabled.value = false;
     assert(logic.compute_command(model, 4000000));
-    assert(logic.tack_state() == pypilot_algorithms::PypilotTackState::none);
+    assert(logic.tack_state() == PypilotTackState::none);
 
     return 0;
 }
