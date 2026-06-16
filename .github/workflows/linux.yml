@@ -1,0 +1,21 @@
+name: linux
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: pypilot-pilots-logic
+      - uses: actions/checkout@v4
+        with:
+          repository: bareboat-necessities/pypilot-data-model
+          path: pypilot-data-model
+      - name: Configure
+        run: cmake -S pypilot-pilots-logic -B pypilot-pilots-logic/build
+      - name: Build
+        run: cmake --build pypilot-pilots-logic/build --parallel
+      - name: Test
+        run: ctest --test-dir pypilot-pilots-logic/build --output-on-failure
