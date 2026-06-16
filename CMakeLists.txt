@@ -14,6 +14,9 @@ add_library(pypilot_pilots_logic
   src/absolute_pilot.cpp
   src/simple_pilot.cpp
   src/rate_pilot.cpp
+  src/wind_pilot.cpp
+  src/gps_pilot.cpp
+  src/vmg_pilot.cpp
   src/pilot_select.cpp
   src/pilots_logic.cpp
 )
@@ -40,6 +43,9 @@ if(PYPILOT_PILOTS_LOGIC_BUILD_TESTS)
       test_absolute_pilot
       test_simple_pilot
       test_rate_pilot
+      test_wind_pilot
+      test_gps_pilot
+      test_vmg_pilot
       test_pilot_select
       test_pilots_logic)
     add_executable(${test_name} tests/${test_name}.cpp)

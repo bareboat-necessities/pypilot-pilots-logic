@@ -21,6 +21,9 @@ Implemented in this project:
 - absolute pilot
 - simple pilot
 - rate pilot
+- wind pilot
+- gps pilot
+- vmg pilot command core
 - selected pilot dispatch
 - `PilotsLogic` facade writing `servo.command_norm` or `servo.position_command_deg`
 
