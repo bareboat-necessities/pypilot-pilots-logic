@@ -33,6 +33,9 @@ private:
     bool has_last_heading_command_;
     uint64_t last_heading_error_int_us_;
     Real gps_speed_filter_kn_;
+    Real stored_preferred_command_deg_;
+    uint64_t stored_preferred_command_us_;
+    bool has_stored_preferred_command_;
 };
 
 } // namespace pypilot_pilots_logic
