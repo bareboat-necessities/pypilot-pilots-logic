@@ -1,10 +1,9 @@
 #include <pypilot_pilots_logic/pilots_logic.hpp>
 
-#include <pypilot_pilots_logic/math_helpers.hpp>
 #include <pypilot_pilots_logic/mode_state.hpp>
 #include <pypilot_pilots_logic/pilot_select.hpp>
 #include <pypilot_pilots_logic/servo_rudder.hpp>
-#include <pypilot_pilots_logic/source_priority.hpp>
+#include <pypilot_pilots_logic/source_arbitration.hpp>
 #include <pypilot_pilots_logic/tack.hpp>
 
 #include <pypilot_algorithms/pypilot_filters.hpp>
