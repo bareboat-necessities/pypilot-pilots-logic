@@ -24,7 +24,7 @@ PilotResult compute_basic_pilot(DataModel& model, uint64_t now_us) {
     model.pilots.basic.PR.contribution.set(pr, now_us);
     model.pilots.basic.FF.contribution.set(ff, now_us);
 
-    result.command_norm = clamp(p + d + dd + pr + ff, -1.0f, 1.0f);
+    result.command_norm = p + d + dd + pr + ff;
     result.valid = true;
 
     if (model.ap.enabled.value) {

@@ -36,6 +36,20 @@ void set_gain_defaults(DataModel& model) {
     set_range(model.pilots.rate.FF.gain, 0.6f, 0.0f, 3.0f);
     set_range(model.pilots.rate.max_turn_rate_deg_s, 2.0f, 0.5f, 30.0f);
     set_range(model.pilots.rate.turn_rate_rate_deg_s2, 0.5f, 0.1f, 5.0f);
+
+    set_range(model.pilots.wind.P.gain, 0.003f, 0.0f, 0.02f);
+    set_range(model.pilots.wind.D.gain, 0.1f, 0.0f, 1.0f);
+    set_range(model.pilots.wind.DD.gain, 0.05f, 0.0f, 1.0f);
+    set_range(model.pilots.wind.WG.gain, 0.0f, -0.1f, 0.1f);
+
+    set_range(model.pilots.gps.P.gain, 0.003f, 0.0f, 0.02f);
+    set_range(model.pilots.gps.D.gain, 0.1f, 0.0f, 1.0f);
+    set_range(model.pilots.gps.DD.gain, 0.05f, 0.0f, 1.0f);
+    set_range(model.pilots.gps.FF.gain, 0.6f, 0.0f, 3.0f);
+
+    set_range(model.pilots.vmg.P.gain, 0.003f, 0.0f, 0.02f);
+    set_range(model.pilots.vmg.D.gain, 0.09f, 0.0f, 0.8f);
+    set_range(model.pilots.vmg.DD.gain, 0.075f, 0.0f, 0.8f);
 }
 
 } // namespace pypilot_pilots_logic

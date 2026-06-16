@@ -22,7 +22,7 @@ PilotResult compute_absolute_pilot(DataModel& model, uint64_t now_us) {
     model.pilots.absolute.D.contribution.set(d, now_us);
     model.pilots.absolute.FF.contribution.set(ff, now_us);
 
-    Real command = clamp(p + i + d + ff, -1.0f, 1.0f);
+    Real command = p + i + d + ff;
     result.position_command_deg = command * model.rudder.range_deg.value;
     result.use_position_command = true;
     result.valid = true;

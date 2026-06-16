@@ -23,7 +23,7 @@ PilotResult compute_rate_pilot(DataModel& model, uint64_t now_us) {
     model.pilots.rate.DD.contribution.set(dd, now_us);
     model.pilots.rate.FF.contribution.set(ff, now_us);
 
-    result.command_norm = clamp(d + dd + ff, -1.0f, 1.0f);
+    result.command_norm = d + dd + ff;
     result.valid = true;
 
     if (model.ap.enabled.value) {

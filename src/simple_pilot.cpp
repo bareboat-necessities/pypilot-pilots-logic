@@ -15,7 +15,7 @@ PilotResult compute_simple_pilot(DataModel& model, uint64_t now_us) {
     model.pilots.simple.I.contribution.set(i, now_us);
     model.pilots.simple.D.contribution.set(d, now_us);
 
-    result.command_norm = clamp(p + i + d, -1.0f, 1.0f);
+    result.command_norm = p + i + d;
     result.valid = true;
 
     if (model.ap.enabled.value) {

@@ -5,7 +5,8 @@
 
 namespace pypilot_pilots_logic {
 
-PilotsLogic::PilotsLogic() : last_error_("") {}
+PilotsLogic::PilotsLogic()
+    : last_error_(""), last_wind_speed_kn_(0.0f), has_last_wind_speed_(false) {}
 
 bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
     last_error_ = "";
@@ -28,7 +29,10 @@ bool PilotsLogic::compute_command(DataModel& model, uint64_t now_us) {
         return true;
     }
 
-    PilotResult result = compute_selected_pilot(model, now_us);
+    PilotResult result = compute_selected_pilot(model,
+                                                now_us,
+                                                last_wind_speed_kn_,
+                                                has_last_wind_speed_);
     if (!result.valid) {
         last_error_ = "pilot command invalid";
         return false;
