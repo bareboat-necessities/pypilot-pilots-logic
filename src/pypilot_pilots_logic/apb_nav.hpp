@@ -2,9 +2,11 @@
 
 #include "types.hpp"
 
-#include <cmath>
-
 namespace pypilot_pilots_logic {
+
+inline Real pypilot_apb_abs(Real value) {
+    return value < Real(0) ? -value : value;
+}
 
 inline Real pypilot_apb_xte_gain_or_default(Real gain_deg_per_nmi) {
     // PyPilot sensors.py APB default: 300 deg/nmi, meaning 30 degrees for 0.1 nmi.
@@ -48,7 +50,7 @@ inline bool apply_apb_nav_heading_command(DataModel& model, uint64_t now_us) {
                                                          model.navigation.apb.xte_gain_deg_per_nmi.value);
 
     if (!model.ap.heading_command_deg.valid ||
-        std::fabs(model.ap.heading_command_deg.value - command) > Real(0.1)) {
+        pypilot_apb_abs(model.ap.heading_command_deg.value - command) > Real(0.1)) {
         model.ap.heading_command_deg.set(command, now_us);
         return true;
     }
