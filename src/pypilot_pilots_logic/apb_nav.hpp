@@ -2,6 +2,8 @@
 
 #include "types.hpp"
 
+#include <cmath>
+
 namespace pypilot_pilots_logic {
 
 inline Real pypilot_apb_xte_gain_or_default(Real gain_deg_per_nmi) {
@@ -35,6 +37,23 @@ inline bool pypilot_apb_nav_command_available(const DataModel& model) {
 // Apply PyPilot APB/NAV command behavior:
 //   heading_command = apb.track + apb.xte_gain * apb.xte
 // Returns true only when heading_command_deg was changed.
-bool apply_apb_nav_heading_command(DataModel& model, uint64_t now_us);
+inline bool apply_apb_nav_heading_command(DataModel& model, uint64_t now_us) {
+    if (!pypilot_apb_nav_command_available(model)) {
+        return false;
+    }
+
+    const Real xte = model.navigation.apb.xte_nmi.valid ? model.navigation.apb.xte_nmi.value : Real(0);
+    const Real command = pypilot_apb_nav_heading_command(model.navigation.apb.track_deg.value,
+                                                         xte,
+                                                         model.navigation.apb.xte_gain_deg_per_nmi.value);
+
+    if (!model.ap.heading_command_deg.valid ||
+        std::fabs(model.ap.heading_command_deg.value - command) > Real(0.1)) {
+        model.ap.heading_command_deg.set(command, now_us);
+        return true;
+    }
+
+    return false;
+}
 
 } // namespace pypilot_pilots_logic
