@@ -2,6 +2,7 @@
 
 #include <pypilot_pilots_logic/mode_state.hpp>
 #include <pypilot_pilots_logic/pilot_select.hpp>
+#include <pypilot_pilots_logic/apb_nav.hpp>
 #include <pypilot_pilots_logic/servo_rudder.hpp>
 #include <pypilot_pilots_logic/source_arbitration.hpp>
 #include <pypilot_pilots_logic/tack.hpp>
@@ -300,6 +301,10 @@ bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
             model.ap.heading_command_deg.set(mode_heading, now_us);
         }
     }
+
+    // PyPilot APB/NAV behavior: an active APB route in NAV mode steers to
+    // track + xte_gain*xte before heading error and command-rate calculation.
+    apply_apb_nav_heading_command(model, now_us);
 
     if (model.ap.heading_deg.valid && model.ap.heading_command_deg.valid) {
         PypilotMode active_mode = to_logic_mode(model.ap.mode.value);
