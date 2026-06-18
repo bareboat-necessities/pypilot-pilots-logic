@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <pypilot_algorithms/pypilot_filters.hpp>
+#include "logging.hpp"
 
 namespace pypilot_pilots_logic {
 
@@ -64,16 +65,38 @@ inline PypilotMode pypilot_fallback_mode(PypilotMode mode) {
     return PypilotMode::compass;
 }
 
+inline void pypilot_log_mode_if_changed(PypilotMode selected_mode) {
+    static bool has_last_mode = false;
+    static PypilotMode last_mode = PypilotMode::compass;
+    if (!has_last_mode || last_mode != selected_mode) {
+        pypilot_syslib::log_if(pilots_logic_logger(), 0ULL,
+                               pypilot_syslib::LogLevel::Info,
+                               pypilot_syslib::LogModule::PilotsLogic,
+                               pypilot_syslib::LogEvent::PilotModeChanged,
+                               "pilot mode changed",
+                               static_cast<int32_t>(selected_mode));
+        last_mode = selected_mode;
+        has_last_mode = true;
+    }
+}
+
 inline PypilotMode pypilot_best_mode(PypilotMode preferred_mode,
                                      uint32_t available_modes_mask) {
     PypilotMode mode = preferred_mode;
     for (int i = 0; i < 5; ++i) {
-        if (pypilot_mode_available(available_modes_mask, mode)) return mode;
+        if (pypilot_mode_available(available_modes_mask, mode)) {
+            pypilot_log_mode_if_changed(mode);
+            return mode;
+        }
         PypilotMode next = pypilot_fallback_mode(mode);
         if (next == mode) break;
         mode = next;
     }
-    if (pypilot_mode_available(available_modes_mask, PypilotMode::compass)) return PypilotMode::compass;
+    if (pypilot_mode_available(available_modes_mask, PypilotMode::compass)) {
+        pypilot_log_mode_if_changed(PypilotMode::compass);
+        return PypilotMode::compass;
+    }
+    pypilot_log_mode_if_changed(preferred_mode);
     return preferred_mode;
 }
 
