@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pypilot_syslib.hpp>
 #include "tack.hpp"
 
 #include "absolute_pilot.hpp"
@@ -20,6 +21,9 @@ namespace pypilot_pilots_logic {
 class PilotsLogic {
 public:
     PilotsLogic();
+
+    void set_logger(pypilot_syslib::Logger* logger);
+    pypilot_syslib::Logger* logger() const;
 
     void begin_tack(PypilotTackDirection direction);
     void cancel_tack();
@@ -52,6 +56,7 @@ private:
     Real tack_rate_deg_s_;
     Real tack_threshold_percent_;
     uint64_t tack_state_start_us_;
+    pypilot_syslib::Logger* logger_;
 };
 
 } // namespace pypilot_pilots_logic
