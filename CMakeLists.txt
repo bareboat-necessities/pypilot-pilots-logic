@@ -7,6 +7,7 @@ option(PYPILOT_PILOTS_LOGIC_BUILD_EXAMPLES "Build examples" ON)
 set(PYPILOT_DATA_MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-data-model/src" CACHE PATH "Path to pypilot-data-model src")
 set(PYPILOT_ALGORITHMS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-algorithms/src" CACHE PATH "Path to pypilot-algorithms src")
 set(PYPILOT_SERVO_PROTOCOL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-servo-protocol/src" CACHE PATH "Path to pypilot-servo-protocol src")
+set(PYPILOT_SYSLIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-syslib/src" CACHE PATH "Path to pypilot-syslib src")
 set(PYPILOT_SERVO_PROTOCOL_REPO_PREFIX "https://github.com")
 set(PYPILOT_SERVO_PROTOCOL_REPO_PATH "bareboat-necessities/pypilot-servo-protocol.git")
 set(PYPILOT_SERVO_PROTOCOL_REPO "${PYPILOT_SERVO_PROTOCOL_REPO_PREFIX}/${PYPILOT_SERVO_PROTOCOL_REPO_PATH}")
@@ -43,6 +44,7 @@ target_include_directories(pypilot_pilots_logic PUBLIC
   ${PYPILOT_DATA_MODEL_DIR}
   ${PYPILOT_ALGORITHMS_DIR}
   ${PYPILOT_SERVO_PROTOCOL_DIR}
+  ${PYPILOT_SYSLIB_DIR}
 )
 
 target_compile_features(pypilot_pilots_logic PUBLIC cxx_std_11)
