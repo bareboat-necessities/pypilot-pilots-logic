@@ -7,12 +7,15 @@ option(PYPILOT_PILOTS_LOGIC_BUILD_EXAMPLES "Build examples" ON)
 set(PYPILOT_DATA_MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-data-model/src" CACHE PATH "Path to pypilot-data-model src")
 set(PYPILOT_ALGORITHMS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-algorithms/src" CACHE PATH "Path to pypilot-algorithms src")
 set(PYPILOT_SERVO_PROTOCOL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-servo-protocol/src" CACHE PATH "Path to pypilot-servo-protocol src")
+set(PYPILOT_SERVO_PROTOCOL_REPO_PREFIX "https://github.com")
+set(PYPILOT_SERVO_PROTOCOL_REPO_PATH "bareboat-necessities/pypilot-servo-protocol.git")
+set(PYPILOT_SERVO_PROTOCOL_REPO "${PYPILOT_SERVO_PROTOCOL_REPO_PREFIX}/${PYPILOT_SERVO_PROTOCOL_REPO_PATH}")
 
 if(NOT EXISTS "${PYPILOT_SERVO_PROTOCOL_DIR}/pypilot_servo_protocol.hpp")
   include(FetchContent)
   FetchContent_Declare(
     pypilot_servo_protocol
-    GIT_REPOSITORY https://github.com/bareboat-necessities/pypilot-servo-protocol.git
+    GIT_REPOSITORY ${PYPILOT_SERVO_PROTOCOL_REPO}
     GIT_TAG main
   )
   FetchContent_GetProperties(pypilot_servo_protocol)
@@ -68,6 +71,7 @@ if(PYPILOT_PILOTS_LOGIC_BUILD_TESTS)
       test_tack
       test_source_arbitration
       test_servo_feedback
+      test_apb_nav
       test_pilot_select
       test_pilots_logic)
     add_executable(${test_name} tests/${test_name}.cpp)
