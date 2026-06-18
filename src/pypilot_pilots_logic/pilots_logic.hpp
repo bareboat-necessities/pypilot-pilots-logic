@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pypilot_syslib.hpp>
+#include "logging.hpp"
 #include "tack.hpp"
 
 #include "absolute_pilot.hpp"
@@ -22,7 +23,7 @@ class PilotsLogic {
 public:
     PilotsLogic();
 
-    void set_logger(pypilot_syslib::Logger* logger) { logger_ = logger; }
+    void set_logger(pypilot_syslib::Logger* logger) { logger_ = logger; set_pilots_logic_logger(logger); }
     pypilot_syslib::Logger* logger() const { return logger_; }
 
     void begin_tack(PypilotTackDirection direction);
