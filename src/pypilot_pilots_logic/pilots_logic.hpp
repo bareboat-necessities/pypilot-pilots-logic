@@ -22,8 +22,8 @@ class PilotsLogic {
 public:
     PilotsLogic();
 
-    void set_logger(pypilot_syslib::Logger* logger);
-    pypilot_syslib::Logger* logger() const;
+    void set_logger(pypilot_syslib::Logger* logger) { logger_ = logger; }
+    pypilot_syslib::Logger* logger() const { return logger_; }
 
     void begin_tack(PypilotTackDirection direction);
     void cancel_tack();
@@ -56,7 +56,7 @@ private:
     Real tack_rate_deg_s_;
     Real tack_threshold_percent_;
     uint64_t tack_state_start_us_;
-    pypilot_syslib::Logger* logger_;
+    pypilot_syslib::Logger* logger_ = 0;
 };
 
 } // namespace pypilot_pilots_logic
