@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "logging.hpp"
 
 namespace pypilot_pilots_logic {
 
@@ -52,6 +53,13 @@ inline bool apply_apb_nav_heading_command(DataModel& model, uint64_t now_us) {
     if (!model.ap.heading_command_deg.valid ||
         pypilot_apb_abs(model.ap.heading_command_deg.value - command) > Real(0.1)) {
         model.ap.heading_command_deg.set(command, now_us);
+        pypilot_syslib::log_if(pilots_logic_logger(), now_us,
+                               pypilot_syslib::LogLevel::Info,
+                               pypilot_syslib::LogModule::PilotsLogic,
+                               pypilot_syslib::LogEvent::ApbNavCommandAccepted,
+                               "apb nav command accepted",
+                               0,
+                               static_cast<float>(command));
         return true;
     }
 
