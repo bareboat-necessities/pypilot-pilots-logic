@@ -14,6 +14,7 @@ set(PYPILOT_DATA_MODEL_REPO "${PYPILOT_REPO_PREFIX}/bareboat-necessities/pypilot
 set(PYPILOT_SERVO_PROTOCOL_REPO "${PYPILOT_REPO_PREFIX}/bareboat-necessities/pypilot-servo-protocol.git")
 set(PYPILOT_SYSLIB_REPO "${PYPILOT_REPO_PREFIX}/bareboat-necessities/pypilot-syslib.git")
 
+# If sibling checkouts are not present, FetchContent pulls the current shared libraries.
 if(NOT EXISTS "${PYPILOT_DATA_MODEL_DIR}/ship_data_model.hpp")
   include(FetchContent)
   FetchContent_Declare(
