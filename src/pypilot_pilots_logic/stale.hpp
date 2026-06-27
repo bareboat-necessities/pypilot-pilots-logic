@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include <pypilot_data_model.hpp>
+#include "types.hpp"
 
 namespace pypilot_pilots_logic {
 
