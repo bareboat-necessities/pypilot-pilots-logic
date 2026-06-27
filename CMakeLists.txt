@@ -27,16 +27,16 @@ if(NOT EXISTS "${PYPILOT_SERVO_PROTOCOL_DIR}/pypilot_servo_protocol.hpp")
 endif()
 
 add_library(pypilot_pilots_logic
-  src/gain.cpp
-  src/basic_pilot.cpp
-  src/absolute_pilot.cpp
-  src/simple_pilot.cpp
-  src/rate_pilot.cpp
-  src/wind_pilot.cpp
-  src/gps_pilot.cpp
-  src/vmg_pilot.cpp
-  src/pilot_select.cpp
-  src/pilots_logic.cpp
+  src/pypilot_pilots_logic/gain.cpp
+  src/pypilot_pilots_logic/basic_pilot.cpp
+  src/pypilot_pilots_logic/absolute_pilot.cpp
+  src/pypilot_pilots_logic/simple_pilot.cpp
+  src/pypilot_pilots_logic/rate_pilot.cpp
+  src/pypilot_pilots_logic/wind_pilot.cpp
+  src/pypilot_pilots_logic/gps_pilot.cpp
+  src/pypilot_pilots_logic/vmg_pilot.cpp
+  src/pypilot_pilots_logic/pilot_select.cpp
+  src/pypilot_pilots_logic/pilots_logic.cpp
 )
 
 target_include_directories(pypilot_pilots_logic PUBLIC
