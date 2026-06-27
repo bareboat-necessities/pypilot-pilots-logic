@@ -1,6 +1,5 @@
 #pragma once
 
-#include <pypilot_syslib.hpp>
 #include "logging.hpp"
 #include "tack.hpp"
 
