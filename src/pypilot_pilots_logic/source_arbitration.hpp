@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <pypilot_data_model.hpp>
+#include "types.hpp"
 #include <pypilot_algorithms/pypilot_filters.hpp>
 
 namespace pypilot_pilots_logic {
