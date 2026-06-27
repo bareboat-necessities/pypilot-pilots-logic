@@ -8,9 +8,25 @@ set(PYPILOT_DATA_MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-data-model/sr
 set(PYPILOT_ALGORITHMS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-algorithms/src" CACHE PATH "Path to pypilot-algorithms src")
 set(PYPILOT_SERVO_PROTOCOL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-servo-protocol/src" CACHE PATH "Path to pypilot-servo-protocol src")
 set(PYPILOT_SYSLIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../pypilot-syslib/src" CACHE PATH "Path to pypilot-syslib src")
-set(PYPILOT_SERVO_PROTOCOL_REPO_PREFIX "https://github.com")
-set(PYPILOT_SERVO_PROTOCOL_REPO_PATH "bareboat-necessities/pypilot-servo-protocol.git")
-set(PYPILOT_SERVO_PROTOCOL_REPO "${PYPILOT_SERVO_PROTOCOL_REPO_PREFIX}/${PYPILOT_SERVO_PROTOCOL_REPO_PATH}")
+
+set(PYPILOT_REPO_PREFIX "https://github.com")
+set(PYPILOT_DATA_MODEL_REPO "${PYPILOT_REPO_PREFIX}/bareboat-necessities/pypilot-data-model.git")
+set(PYPILOT_SERVO_PROTOCOL_REPO "${PYPILOT_REPO_PREFIX}/bareboat-necessities/pypilot-servo-protocol.git")
+set(PYPILOT_SYSLIB_REPO "${PYPILOT_REPO_PREFIX}/bareboat-necessities/pypilot-syslib.git")
+
+if(NOT EXISTS "${PYPILOT_DATA_MODEL_DIR}/ship_data_model.hpp")
+  include(FetchContent)
+  FetchContent_Declare(
+    pypilot_data_model
+    GIT_REPOSITORY ${PYPILOT_DATA_MODEL_REPO}
+    GIT_TAG main
+  )
+  FetchContent_GetProperties(pypilot_data_model)
+  if(NOT pypilot_data_model_POPULATED)
+    FetchContent_Populate(pypilot_data_model)
+  endif()
+  set(PYPILOT_DATA_MODEL_DIR "${pypilot_data_model_SOURCE_DIR}/src")
+endif()
 
 if(NOT EXISTS "${PYPILOT_SERVO_PROTOCOL_DIR}/pypilot_servo_protocol.hpp")
   include(FetchContent)
@@ -24,6 +40,20 @@ if(NOT EXISTS "${PYPILOT_SERVO_PROTOCOL_DIR}/pypilot_servo_protocol.hpp")
     FetchContent_Populate(pypilot_servo_protocol)
   endif()
   set(PYPILOT_SERVO_PROTOCOL_DIR "${pypilot_servo_protocol_SOURCE_DIR}/src")
+endif()
+
+if(NOT EXISTS "${PYPILOT_SYSLIB_DIR}/pypilot_syslib.hpp")
+  include(FetchContent)
+  FetchContent_Declare(
+    pypilot_syslib
+    GIT_REPOSITORY ${PYPILOT_SYSLIB_REPO}
+    GIT_TAG main
+  )
+  FetchContent_GetProperties(pypilot_syslib)
+  if(NOT pypilot_syslib_POPULATED)
+    FetchContent_Populate(pypilot_syslib)
+  endif()
+  set(PYPILOT_SYSLIB_DIR "${pypilot_syslib_SOURCE_DIR}/src")
 endif()
 
 add_library(pypilot_pilots_logic
