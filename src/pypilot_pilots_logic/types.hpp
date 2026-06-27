@@ -2,7 +2,9 @@
 
 #include <stdint.h>
 
-#include <pypilot_data_model.hpp>
+#include <ship_data_model.hpp>
+
+namespace pypilot_data_model = ship_data_model;
 
 namespace pypilot_pilots_logic {
 
