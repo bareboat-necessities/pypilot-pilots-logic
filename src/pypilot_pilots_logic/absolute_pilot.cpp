@@ -1,17 +1,28 @@
 #include <pypilot_pilots_logic/absolute_pilot.hpp>
 
-#include <pypilot_pilots_logic/servo_rudder.hpp>
 #include <pypilot_algorithms/absolute_pilot.hpp>
 
 namespace pypilot_pilots_logic {
+
+namespace {
+
+bool rudder_feedback_valid(bool angle_valid, bool angle_live, Real range_deg) {
+    return angle_valid && angle_live && range_deg > Real(0);
+}
+
+Real rudder_position_command(Real command_norm, Real range_deg) {
+    return command_norm * range_deg;
+}
+
+} // namespace
 
 PilotResult compute_absolute_pilot(DataModel& model, uint64_t now_us) {
     PilotResult result;
 
     bool rudder_live = model.rudder.angle_deg.valid && !model.rudder.angle_deg.stale(now_us, 8000000ULL);
-    if (!pypilot_rudder_feedback_valid(model.rudder.angle_deg.valid,
-                                       rudder_live,
-                                       model.rudder.range_deg.value)) {
+    if (!rudder_feedback_valid(model.rudder.angle_deg.valid,
+                               rudder_live,
+                               model.rudder.range_deg.value)) {
         model.ap.pilot.value = pypilot_data_model::PilotName::basic;
         return result;
     }
@@ -39,8 +50,8 @@ PilotResult compute_absolute_pilot(DataModel& model, uint64_t now_us) {
     model.pilots.absolute.FF.contribution.set(output.FFgain, now_us);
 
     result.position_command_deg =
-        pypilot_rudder_position_command(output.command_norm,
-                                        model.rudder.range_deg.value);
+        rudder_position_command(output.command_norm,
+                                model.rudder.range_deg.value);
     result.use_position_command = true;
     result.valid = true;
 
