@@ -3,11 +3,11 @@
 #include <pypilot_pilots_logic/mode_state.hpp>
 #include <pypilot_pilots_logic/pilot_select.hpp>
 #include <pypilot_pilots_logic/apb_nav.hpp>
-#include <pypilot_pilots_logic/servo_rudder.hpp>
 #include <pypilot_pilots_logic/source_arbitration.hpp>
 #include <pypilot_pilots_logic/tack.hpp>
 
 #include <pypilot_algorithms/pypilot_filters.hpp>
+#include <pypilot_servo_protocol.hpp>
 
 namespace pypilot_pilots_logic {
 
@@ -41,6 +41,15 @@ static uint32_t to_data_mode_mask(uint32_t logic_mask) {
     if (logic_mask & pypilot_mode_mask_wind) mask |= pypilot_data_model::mode_mask_wind;
     if (logic_mask & pypilot_mode_mask_true_wind) mask |= pypilot_data_model::mode_mask_true_wind;
     return mask;
+}
+
+static bool servo_faulted(uint32_t flags) {
+    return pypilot_servo_protocol::is_fault_flag(static_cast<uint16_t>(flags & 0xffffu));
+}
+
+static void reset_servo_commands(DataModel& model, uint64_t now_us) {
+    model.servo.command_norm.set_internal_command(Real(0), now_us);
+    model.servo.position_command_deg.set_internal_command(Real(0), now_us);
 }
 
 static void invalidate_stale_sources(DataModel& model, uint64_t now_us) {
@@ -345,16 +354,12 @@ bool PilotsLogic::update_inputs(DataModel& model, uint64_t now_us) {
 bool PilotsLogic::compute_command(DataModel& model, uint64_t now_us) {
     last_error_ = "";
     if (!model.ap.enabled.value) {
-        Real reset = pypilot_reset_command<Real>();
-        model.servo.command_norm.set_internal_command(reset, now_us);
-        model.servo.position_command_deg.set_internal_command(reset, now_us);
+        reset_servo_commands(model, now_us);
         cancel_tack();
         return true;
     }
-    if (!pypilot_servo_allows_command(model.servo.flags.value)) {
-        Real reset = pypilot_reset_command<Real>();
-        model.servo.command_norm.set_internal_command(reset, now_us);
-        model.servo.position_command_deg.set_internal_command(reset, now_us);
+    if (servo_faulted(model.servo.flags.value)) {
+        reset_servo_commands(model, now_us);
         cancel_tack();
         last_error_ = "servo fault";
         return false;
@@ -381,7 +386,7 @@ bool PilotsLogic::compute_command(DataModel& model, uint64_t now_us) {
         input.heading_command_deg = model.ap.heading_command_deg.value;
         input.heading_deg = model.ap.heading_deg.valid ? model.ap.heading_deg.value : model.imu.heading_lowpass_deg.value;
         input.headingrate_deg_s = model.imu.heading_rate_lowpass_deg_s.valid ? model.imu.heading_rate_lowpass_deg_s.value : Real(0);
-        input.headingraterate_deg_s2 = model.imu.heading_rate_rate_lowpass_deg_s2.valid ? model.imu.heading_rate_rate_lowpass_deg_s2.value : Real(0);
+        input.headingraterate_deg_s2 = model.imu.heading_rate_rate_lowpass_deg_s2.valid ? model.imu.heading_rate_rate_deg_s2.value : Real(0);
         input.wind_mode = model.ap.mode.value == pypilot_data_model::AutopilotMode::wind || model.ap.mode.value == pypilot_data_model::AutopilotMode::true_wind;
         input.apparent_wind_direction_deg = model.wind.apparent.direction_deg.valid ? model.wind.apparent.direction_deg.value : (model.wind.apparent.filtered_direction_deg.valid ? model.wind.apparent.filtered_direction_deg.value : Real(0));
         PypilotTackConfig<Real> config;
@@ -401,9 +406,7 @@ bool PilotsLogic::compute_command(DataModel& model, uint64_t now_us) {
     }
     PilotResult result = compute_selected_pilot(model, now_us, last_wind_speed_kn_, has_last_wind_speed_);
     if (!result.valid) {
-        Real reset = pypilot_reset_command<Real>();
-        model.servo.command_norm.set_internal_command(reset, now_us);
-        model.servo.position_command_deg.set_internal_command(reset, now_us);
+        reset_servo_commands(model, now_us);
         last_error_ = "pilot command invalid";
         return false;
     }
